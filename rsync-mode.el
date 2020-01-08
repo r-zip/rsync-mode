@@ -107,7 +107,8 @@
           (rsync-get-hostname remote-path)))
 
 (defun rsync--process-exit-hook (proc event)
-  (when-let ((cur-buffer (get-buffer rsync--buffer-list)))
+  (when-let* ((cur-buffer (get-buffer rsync--buffer-list))
+              (buffer-name (buffer-name cur-buffer)))
     (with-current-buffer cur-buffer
       (spinner-stop rsync--spinner)
       (setq rsync--buffer-list (cdr rsync--buffer-list))))
@@ -117,7 +118,7 @@
 
 (defun rsync-run (remote-path excludes local-path &optional dry-run)
   (rsync--start-spinner)
-  (push 'rsync--buffer-list (current-buffer))
+  (push 'rsync--buffer-list (buffer-name (current-buffer)))
   (setq rsync--process
         (start-process-shell-command
          "rsync"
