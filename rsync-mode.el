@@ -54,6 +54,20 @@ Each path should have the form 'host:/path/to/project'.")
   '(" rsync" (:eval (spinner-print rsync--spinner)))
   "The mode lighter for `rsync-mode'.")
 
+;; TODO: clean up according to https://www.gnu.org/software/emacs/manual/html_node/elisp/Surprising-Local-Vars.html#Surprising-Local-Vars 
+(defmacro rsync-with-info (&rest forms)
+  "Load dir-local rsync information, then execute FORMS.
+When using this macro, `local-path', `remote-paths',
+`excluded-dirs', and `excludes' are available as local
+variables."
+  `(progn
+     (hack-dir-local-variables)
+     (when-let* ((local-path (alist-get 'rsync-local-path file-local-variables-alist))
+                 (remote-paths (alist-get 'rsync-remote-paths file-local-variables-alist))
+                 (excluded-dirs (alist-get 'rsync-excluded-dirs file-local-variables-alist))
+                 (excludes (rsync--get-excludes excluded-dirs)))
+       ,@forms)))
+
 (defun rsync--start-spinner ()
   "Create and start a spinner on this buffer."
   (unless rsync--spinner
@@ -67,15 +81,15 @@ Each path should have the form 'host:/path/to/project'.")
   ;; The indicator for the mode line
   :lighter rsync--lighter
   :group 'rsync
-  (hack-dir-local-variables)
-  (if (not (alist-get 'rsync-remote-paths file-local-variables-alist))
-      (message "Failed to activate rsync-mode: No remote configuration for rsync-mode found in dir-locals.")
-    (if (not rsync-mode)
-        (remove-hook 'after-save-hook #'rsync-all t)
-      ;; taken from the spinner readme: https://github.com/Malabarba/spinner.el
-      (defvar-local rsync--spinner nil)
-      (defvar-local rsync--process nil)
-      (add-hook 'after-save-hook #'rsync-all 0 t))))
+  (rsync-with-info
+   (if (not remote-paths)
+       (message "Failed to activate rsync-mode: No remote configuration for rsync-mode found in dir-locals.")
+     (if (not rsync-mode)
+         (remove-hook 'after-save-hook #'rsync-all t)
+       ;; taken from the spinner readme: https://github.com/Malabarba/spinner.el
+       (defvar-local rsync--spinner nil)
+       (defvar-local rsync--process nil)
+       (add-hook 'after-save-hook #'rsync-all 0 t)))))
 
 (defun rsync--get-hostname (path)
   "Get the hostname from the remote path PATH."
@@ -95,19 +109,6 @@ EXCLUDED-DIRS should be a list of strings."
                        ,@rsync-default-excluded-dirs)))
        " ")
     ""))
-
-;; TODO: clean up according to https://www.gnu.org/software/emacs/manual/html_node/elisp/Surprising-Local-Vars.html#Surprising-Local-Vars 
-(defmacro rsync-with-info (&rest forms)
-  "Load dir-local rsync information, then execute FORMS.
-When using this macro, `local-path', `remote-paths',
-`excluded-dirs', and `excludes' are available as local
-variables."
-  `((hack-dir-local-variables)
-    (when-let* ((local-path (alist-get 'rsync-local-path file-local-variables-alist))
-                (remote-paths (alist-get 'rsync-remote-paths file-local-variables-alist))
-                (excluded-dirs (alist-get 'rsync-excluded-dirs file-local-variables-alist))
-                (excludes (rsync--get-excludes excluded-dirs)))
-      ,@forms)))
 
 (defun rsync--get-rsync-buffer-name (remote-path)
   "Generate the buffer name for the rsync process.
