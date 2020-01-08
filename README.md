@@ -34,3 +34,5 @@ remote hosts found in the directory-local variable
 `rsync-remote-paths`.
 
 ## `rsync-mode`
+The minor mode `rsync-mode` adds a hook that runs `rsync-all` on save,
+which is especially convenient for remote development.
