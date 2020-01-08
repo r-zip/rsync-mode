@@ -102,12 +102,12 @@ EXCLUDED-DIRS should be a list of strings."
 When using this macro, `local-path', `remote-paths',
 `excluded-dirs', and `excludes' are available as local
 variables."
-  (hack-dir-local-variables)
-  `(when-let* ((local-path (alist-get 'rsync-local-path file-local-variables-alist))
-               (remote-paths (alist-get 'rsync-remote-paths file-local-variables-alist))
-               (excluded-dirs (alist-get 'rsync-excluded-dirs file-local-variables-alist))
-               (excludes (rsync--get-excludes excluded-dirs)))
-     ,@forms))
+  `((hack-dir-local-variables)
+    (when-let* ((local-path (alist-get 'rsync-local-path file-local-variables-alist))
+                (remote-paths (alist-get 'rsync-remote-paths file-local-variables-alist))
+                (excluded-dirs (alist-get 'rsync-excluded-dirs file-local-variables-alist))
+                (excludes (rsync--get-excludes excluded-dirs)))
+      ,@forms)))
 
 (defun rsync--get-rsync-buffer-name (remote-path)
   "Generate the buffer name for the rsync process.
