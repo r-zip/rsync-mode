@@ -105,7 +105,6 @@
   (format "*rsync to %s*"
           (rsync-get-hostname remote-path)))
 
-
 (defun rsync--process-exit-hook (proc event)
   (spinner-stop rsync--spinner)
   (if (not (string-equal event "finished\n"))
