@@ -53,6 +53,7 @@
                                       ".venv"
                                       "__pycache__"))
 
+(defvar rsync--buffer-list nil)
 
 (defconst rsync--lighter
   '(" rsync" (:eval (spinner-print rsync--spinner))))
@@ -105,23 +106,18 @@
   (format "*rsync to %s*"
           (rsync-get-hostname remote-path)))
 
-(defmacro rsync--make-exit-hook (buffer)
-  `(lambda (proc event)
-     (when (get-buffer ,buffer)
-       (with-current-buffer ,buffer
-         (spinner-stop rsync--spinner))
-       (if (not (string-equal event "finished\n"))
-           (message "Rsync process received abnormal event %s" event)
-         (message "Rsync complete.")))))
-
 (defun rsync--process-exit-hook (proc event)
-  (spinner-stop rsync--spinner)
+  (when-let ((cur-buffer (get-buffer rsync--buffer-list)))
+    (with-current-buffer cur-buffer
+      (spinner-stop rsync--spinner)
+      (setq rsync--buffer-list (cdr rsync--buffer-list))))
   (if (not (string-equal event "finished\n"))
       (message "Rsync process received abnormal event %s" event)
     (message "Rsync complete.")))
 
 (defun rsync-run (remote-path excludes local-path &optional dry-run)
   (rsync--start-spinner)
+  (push 'rsync--buffer-list (current-buffer))
   (setq rsync--process
         (start-process-shell-command
          "rsync"
@@ -136,7 +132,7 @@
     (goto-char (point-max))
     (skip-chars-backward "\n[:space:]")
     (insert (concat "\n\n" (time-stamp-string) "\n")))
-  (set-process-sentinel rsync--process (rsync--make-exit-hook (current-buffer))))
+  (set-process-sentinel rsync--process #'rsync--process-exit-hook))
 
 (defun rsync-all (&optional dry-run)
   (interactive)
