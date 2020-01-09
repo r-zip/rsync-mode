@@ -138,21 +138,22 @@ process is complete and forward abnormal event strings."
         (message "Rsync process received abnormal event %s" event)
       (message "Rsync complete."))))
 
-(defun rsync--run (remote-path excludes local-path &optional dry-run)
+(defun rsync--run (remote-path excludes local-path &optional dry-run file)
   "Synchronize the current project from LOCAL-PATH to REMOTE-PATH.
 Exclude according to EXCLUDES and the variable
 `rsync-default-excluded-dirs'. If DRY-RUN is t, call rsync with
-the dry-run flag."
+the dry-run flag. If FILE is non-nil, sync only that file. The
+path specified by FILE is assumed to be relative to LOCAL-PATH."
   (rsync--start-spinner)
   (setq rsync--process
         (start-process-shell-command
          "rsync"
          (rsync--get-rsync-buffer-name remote-path)
          (format "rsync %s %s%s %s %s"
-                 "-av"
+                 (if file "-avR" "-av")
                  (if dry-run "--dry-run " "")
                  excludes
-                 local-path
+                 (if file (concat local-path "/./" file) local-path)
                  remote-path)))
   (with-current-buffer (rsync--get-rsync-buffer-name remote-path)
     (goto-char (point-max))
@@ -189,5 +190,20 @@ dry-run flag."
     (rsync-with-info
      (rsync--run selected-remote excludes local-path dry-run))))
 
+(defun rsync-file (&optional file dry-run)
+  "Synchronize the specified file to a single remote host.
+The host is selected interactively by the function
+`rsync--select-remote'. If FILE is nil, use the current
+buffer file. If DRY-RUN is t, call rsync with the dry-run
+flag."
+  (interactive)
+  (let ((selected-remote (call-interactively #'rsync--select-remote)))
+    (rsync-with-info
+     (rsync--run selected-remote
+                 excludes
+                 local-path
+                 dry-run
+                 (or file
+                     (file-relative-name buffer-file-name local-path))))))
 (provide 'rsync-mode)
 ;;; rsync-mode.el ends here
