@@ -47,6 +47,8 @@ Each path should have the form 'host:/path/to/project'.")
 ;; to override, delete entry and save in dir-locals
 (defcustom rsync-default-excluded-dirs nil
   "List of directories to exclude from all projects for rsync.")
+(defcustom rsync-sync-on-save nil
+  "Whether to activate a hook that synchronizes the project after each save.")
 
 (defvar rsync--process-exit-hook nil
   "Closure defining the process cleanup code.")
@@ -54,7 +56,6 @@ Each path should have the form 'host:/path/to/project'.")
   '(" rsync" (:eval (spinner-print rsync--spinner)))
   "The mode lighter for `rsync-mode'.")
 
-;; TODO: clean up according to https://www.gnu.org/software/emacs/manual/html_node/elisp/Surprising-Local-Vars.html#Surprising-Local-Vars 
 (defmacro rsync-with-info (&rest forms)
   "Load dir-local rsync information, then execute FORMS.
 When using this macro, `local-path', `remote-paths',
@@ -70,9 +71,10 @@ variables."
 
 (defun rsync--start-spinner ()
   "Create and start a spinner on this buffer."
-  (unless rsync--spinner
-    (setq rsync--spinner (spinner-create 'progress-bar-filled t)))
-  (spinner-start rsync--spinner))
+  (when rsync-mode
+    (unless rsync--spinner
+      (setq rsync--spinner (spinner-create 'progress-bar-filled t)))
+    (spinner-start rsync--spinner)))
 
 (define-minor-mode rsync-mode
   "Toggle rsync mode."
@@ -89,7 +91,8 @@ variables."
        ;; taken from the spinner readme: https://github.com/Malabarba/spinner.el
        (defvar-local rsync--spinner nil)
        (defvar-local rsync--process nil)
-       (add-hook 'after-save-hook #'rsync-all 0 t)))))
+       (when rsync-sync-on-save
+         (add-hook 'after-save-hook #'rsync-all 0 t))))))
 
 (defun rsync--get-hostname (path)
   "Get the hostname from the remote path PATH."
@@ -129,7 +132,8 @@ The created function will also message the user when the rsync
 process is complete and forward abnormal event strings."
   (lambda (proc event)
     (with-current-buffer buffer
-      (spinner-stop rsync--spinner))
+      (when rsync-mode
+        (spinner-stop rsync--spinner)))
     (if (not (string-equal event "finished\n"))
         (message "Rsync process received abnormal event %s" event)
       (message "Rsync complete."))))
