@@ -203,7 +203,6 @@ flag."
                  excludes
                  local-path
                  dry-run
-                 (or file
-                     (file-relative-name buffer-file-name local-path))))))
+                 (file-relative-name (or file buffer-file-name) local-path)))))
 (provide 'rsync-mode)
 ;;; rsync-mode.el ends here
