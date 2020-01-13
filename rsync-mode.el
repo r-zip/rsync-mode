@@ -33,6 +33,7 @@
 
 ;;; Code:
 
+;; TODO: add excludes configuration
 (require 'spinner)
 (require 'ivy)
 (require 'counsel)
