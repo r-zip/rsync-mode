@@ -9,22 +9,25 @@ every save.
 ## Project configuration
 To specify remote hosts for the project, set the directory-local
 variables `rsync-remote-paths`, `rsync-local-path`, and
-`rsync-excluded-dirs` at the project root level. Example:
+`rsync-excluded-dirs` at the project root level.
+
+Here is an example that will enable synchronization on save for any file that is in a subdirectory of the project root:
 
 ``` emacs-lisp
 ;;; Directory Local Variables
 ;;; For more information see (info "(emacs) Directory Variables")
 
-((nil . ((rsync-remote-paths . ("host1:projects/" "host2:projects/"))
-         (rsync-local-path . "/path/to/local/project")
+((nil . ((rsync-remote-paths . ("remote:/path/to/remote/directory"))
+         (rsync-local-path . "/path/to/local/directory/")
          (rsync-excluded-dirs . (".git"
                                  "data"
                                  ".ipynb_checkpoints"
                                  ".pytest_cache"
                                  "venv"
-                                 "*.egg-info")))))
+                                 "*.egg-info"))
+         (rsync-sync-on-save . t)
+         (eval . (rsync-mode)))))
 ```
-To enable the automatic rsync on save feature, customize `rsync-sync-on-save`.
 
 ## Commands
 Two functions are defined for interactive use: `rsync` and
