@@ -55,18 +55,11 @@ Each path should have the form 'host:/path/to/project'.")
   '(" rsync" (:eval (spinner-print rsync--spinner)))
   "The mode lighter for `rsync-mode'.")
 
-(defmacro rsync-with-info (&rest forms)
-  "Load dir-local rsync information, then execute FORMS.
-When using this macro, `local-path', `remote-paths',
-`excluded-dirs', and `excludes' are available as local
-variables."
-  `(progn
-     (hack-dir-local-variables)
-     (when-let* ((local-path (alist-get 'rsync-local-path file-local-variables-alist))
-                 (remote-paths (alist-get 'rsync-remote-paths file-local-variables-alist))
-                 (excluded-dirs (alist-get 'rsync-excluded-dirs file-local-variables-alist))
-                 (excludes (rsync--get-excludes excluded-dirs)))
-       ,@forms)))
+(defvar rsync-local-path nil
+  "The path to the local repository to be rsync'ed to the remote.")
+
+(defvar rsync-remote-paths nil
+  "The paths to the remote repositories. These must have the form hostname:path/to/repo.")
 
 (defun rsync--start-spinner ()
   "Create and start a spinner on this buffer."
@@ -82,16 +75,15 @@ variables."
   ;; The indicator for the mode line
   :lighter rsync--lighter
   :group 'rsync
-  (rsync-with-info
-   (if (not remote-paths)
-       (message "Failed to activate rsync-mode: No remote configuration for rsync-mode found in dir-locals.")
-     (if (not rsync-mode)
-         (remove-hook 'after-save-hook #'rsync-all t)
-       ;; taken from the spinner readme: https://github.com/Malabarba/spinner.el
-       (defvar-local rsync--spinner nil)
-       (defvar-local rsync--process nil)
-       (when rsync-sync-on-save
-         (add-hook 'after-save-hook #'rsync-all 0 t))))))
+  (if (not rsync-remote-paths)
+      (message "Failed to activate rsync-mode: No remote configuration for rsync-mode found in dir-locals.")
+    (if (not rsync-mode)
+        (remove-hook 'after-save-hook #'rsync-all t)
+      ;; taken from the spinner readme: https://github.com/Malabarba/spinner.el
+      (defvar-local rsync--spinner nil)
+      (defvar-local rsync--process nil)
+      (when rsync-sync-on-save
+        (add-hook 'after-save-hook #'rsync-all 0 t)))))
 
 (defun rsync--get-hostname (path)
   "Get the hostname from the remote path PATH."
@@ -168,19 +160,17 @@ by FILE is assumed to be relative to LOCAL-PATH."
 If DRY-RUN is t, call rsync with the dry-run flag.
 
 If FILE is non-nil, sync only that file. The path specified
-by FILE is assumed to be relative to LOCAL-PATH."
+by FILE is assumed to be relative to RSYNC-LOCAL-PATH."
   (interactive)
-  (rsync-with-info
-   (when remote-paths
-     (dolist (remote-path remote-paths)
-       (rsync--run remote-path excludes local-path dry-run file)))))
+  (when rsync-remote-paths
+    (dolist (remote-path rsync-remote-paths)
+      (rsync--run remote-path (rsync--get-excludes rsync-excluded-dirs) rsync-local-path dry-run file))))
 
 (defun rsync--select-remote ()
   "Interactively select the remote for synchronization.
 REMOTE is the selected remote host."
   (interactive)
-  (rsync-with-info
-   (completing-read "Rsync project to: " remote-paths nil t)))
+  (completing-read "Rsync project to: " rsync-remote-paths nil t))
 
 (defun rsync (&optional dry-run file)
   "Synchronize the current project to a single remote host.
@@ -189,11 +179,10 @@ The host is selected interactively by the function
 dry-run flag.
 
 If FILE is non-nil, sync only that file. The path specified
-by FILE is assumed to be relative to LOCAL-PATH."
+by FILE is assumed to be relative to RSYNC-LOCAL-PATH."
   (interactive)
   (let ((selected-remote (call-interactively #'rsync--select-remote)))
-    (rsync-with-info
-     (rsync--run selected-remote excludes local-path dry-run file))))
+    (rsync--run selected-remote (rsync--get-excludes rsync-excluded-dirs) rsync-local-path dry-run file)))
 
 (defun rsync-file (select &optional file dry-run)
   "Synchronize the specified file to all remote hosts.
@@ -205,12 +194,11 @@ If FILE is nil, use the current buffer file.
 
 If DRY-RUN is non-nil, call rsync with the dry-run flag."
   (interactive "P")
-  (rsync-with-info
-   (let ((file-name (file-relative-name (or file buffer-file-name)
-                                        local-path)))
-     (if select
-         (rsync dry-run file-name)
-       (rsync-all dry-run file-name)))))
+  (let ((file-name (file-relative-name (or file buffer-file-name)
+                                       rsync-local-path)))
+    (if select
+        (rsync dry-run file-name)
+      (rsync-all dry-run file-name))))
 
 (provide 'rsync-mode)
 ;;; rsync-mode.el ends here
