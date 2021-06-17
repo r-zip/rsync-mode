@@ -5,7 +5,7 @@
 ;; Author: Ryan Pilgrim <ryan.z.pilgrim@gmail.com>
 ;; URL: https://github.com/r-zip/rsync-mode.el
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "26.1") (spinner "1.7.3") (ivy "0.13.0") (counsel "0.13.0"))
+;; Package-Requires: ((emacs "26.1") (spinner "1.7.3"))
 ;; Keywords: remote rsync
 
 ;; rsync-mode requires at least GNU Emacs 26.3 and rsync 3.1.3,
@@ -35,8 +35,6 @@
 
 ;; TODO: add excludes configuration
 (require 'spinner)
-(require 'ivy)
-(require 'counsel)
 (require 'time-stamp)
 
 (defvar rsync-local-path nil
@@ -177,14 +175,12 @@ by FILE is assumed to be relative to LOCAL-PATH."
      (dolist (remote-path remote-paths)
        (rsync--run remote-path excludes local-path dry-run file)))))
 
-(defun rsync--select-remote (remote)
+(defun rsync--select-remote ()
   "Interactively select the remote for synchronization.
 REMOTE is the selected remote host."
-  (interactive
-   (list
-    (rsync-with-info
-     (ivy-read "Rsync project to: " remote-paths :require-match t))))
-  remote)
+  (interactive)
+  (rsync-with-info
+   (completing-read "Rsync project to: " remote-paths nil t)))
 
 (defun rsync (&optional dry-run file)
   "Synchronize the current project to a single remote host.
