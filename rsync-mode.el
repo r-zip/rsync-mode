@@ -36,6 +36,12 @@
 (require 'spinner)
 (require 'time-stamp)
 
+(defgroup rsync-mode nil
+  "Convenient remote synchronization."
+  :group 'convenience
+  :prefix "rsync-"
+  :link '(url-link "https://github.com/r-zip/rsync-mode"))
+
 (defvar rsync-local-path nil
   "Local path to the project, as a string.")
 (defvar rsync-remote-paths nil
@@ -44,9 +50,13 @@ Each path should have the form 'host:/path/to/project'.")
 (defvar rsync-excluded-dirs nil)
 ;; to override, delete entry and save in dir-locals
 (defcustom rsync-default-excluded-dirs nil
-  "List of directories to exclude from all projects for rsync.")
+  "List of directories to exclude from all projects for rsync."
+  :group 'rsync-mode
+  :type '(string))
 (defcustom rsync-sync-on-save nil
-  "Whether to activate a hook that synchronizes the project after each save.")
+  "Whether to activate a hook that synchronizes the project after each save."
+  :group 'rsync-mode
+  :type 'boolean)
 
 (defvar rsync--process-exit-hook nil
   "Closure defining the process cleanup code.")
