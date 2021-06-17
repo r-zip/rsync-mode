@@ -1,4 +1,4 @@
-;;; rsync-mode.el --- rsync projects to remote machines  -*- lexical-binding: t; coding: utf-8 -*-
+;;; rsync-mode.el --- Rsync projects to remote machines  -*- lexical-binding: t; coding: utf-8 -*-
 
 ;; Copyright (C) 2020 Ryan Pilgrim
 
@@ -6,7 +6,7 @@
 ;; URL: https://github.com/r-zip/rsync-mode.el
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "26.1") (spinner "1.7.3"))
-;; Keywords: remote rsync
+;; Keywords: comm
 
 ;; rsync-mode requires at least GNU Emacs 26.3 and rsync 3.1.3,
 ;; protocol version 31.
@@ -33,7 +33,6 @@
 
 ;;; Code:
 
-;; TODO: add excludes configuration
 (require 'spinner)
 (require 'time-stamp)
 
