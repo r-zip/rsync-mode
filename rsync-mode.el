@@ -1,11 +1,11 @@
 ;;; rsync-mode.el --- Rsync projects to remote machines  -*- lexical-binding: t; coding: utf-8 -*-
 
-;; Copyright (C) 2020 Ryan Pilgrim
+;; Copyright (C) 2020-2021 Ryan Pilgrim
 
 ;; Author: Ryan Pilgrim <ryan.z.pilgrim@gmail.com>
 ;; URL: https://github.com/r-zip/rsync-mode.el
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "26.1") (spinner "1.7.3"))
+;; Package-Requires: ((emacs "26.1") (spinner "1.7.1"))
 ;; Keywords: comm
 
 ;; rsync-mode requires at least GNU Emacs 26.3 and rsync 3.1.3,
@@ -35,8 +35,9 @@
 
 (require 'spinner)
 (require 'time-stamp)
+(require 'subr-x)
 
-(defgroup rsync-mode nil
+(defgroup rsync nil
   "Convenient remote synchronization."
   :group 'convenience
   :prefix "rsync-"
@@ -51,13 +52,19 @@ Each path should have the form 'host:/path/to/project'.")
 ;; to override, delete entry and save in dir-locals
 (defcustom rsync-default-excluded-dirs nil
   "List of directories to exclude from all projects for rsync."
-  :group 'rsync-mode
-  :type '(string))
+  :group 'rsync
+  :type (list 'string))
 (defcustom rsync-sync-on-save nil
   "Whether to activate a hook that synchronizes the project after each save."
-  :group 'rsync-mode
+  :group 'rsync
   :type 'boolean)
 
+(defvar-local rsync-mode nil
+  "Whether rsync-mode is enabled.")
+(defvar-local rsync--process nil
+  "Rsync process object.")
+(defvar-local rsync--spinner nil
+  "Rsync spinner object.")
 (defvar rsync--process-exit-hook nil
   "Closure defining the process cleanup code.")
 (defconst rsync--lighter
@@ -68,7 +75,8 @@ Each path should have the form 'host:/path/to/project'.")
   "The path to the local repository to be rsync'ed to the remote.")
 
 (defvar rsync-remote-paths nil
-  "The paths to the remote repositories. These must have the form hostname:path/to/repo.")
+  "The paths to the remote repositories.
+These must have the form hostname:path/to/repo (relative or absolute).")
 
 (defun rsync--start-spinner ()
   "Create and start a spinner on this buffer."
@@ -89,8 +97,8 @@ Each path should have the form 'host:/path/to/project'.")
     (if (not rsync-mode)
         (remove-hook 'after-save-hook #'rsync-all t)
       ;; taken from the spinner readme: https://github.com/Malabarba/spinner.el
-      (defvar-local rsync--spinner nil)
-      (defvar-local rsync--process nil)
+      (setq rsync--spinner nil)
+      (setq rsync--process nil)
       (when rsync-sync-on-save
         (add-hook 'after-save-hook #'rsync-all 0 t)))))
 
@@ -130,7 +138,7 @@ changed the state of the rsync process."
   "Create function to clean up the spinner for BUFFER.
 The created function will also message the user when the rsync
 process is complete and forward abnormal event strings."
-  (lambda (proc event)
+  (lambda (_ event)
     (with-current-buffer buffer
       (when rsync-mode
         (spinner-stop rsync--spinner)))
