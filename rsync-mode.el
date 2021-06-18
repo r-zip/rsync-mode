@@ -69,7 +69,7 @@ Each path should have the form 'host:/path/to/project'.")
   "Closure defining the process cleanup code.")
 (defconst rsync--lighter
   '(" rsync" (:eval (spinner-print rsync--spinner)))
-  "The mode lighter for `rsync-mode'.")
+  "The mode lighter.")
 
 (defvar rsync-local-path nil
   "The path to the local repository to be rsync'ed to the remote.")
