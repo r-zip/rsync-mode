@@ -201,21 +201,5 @@ by FILE is assumed to be relative to RSYNC-LOCAL-PATH."
   (let ((selected-remote (call-interactively #'rsync--select-remote)))
     (rsync--run selected-remote (rsync--get-excludes rsync-excluded-dirs) rsync-local-path dry-run file)))
 
-(defun rsync-file (select &optional file dry-run)
-  "Synchronize the specified file to all remote hosts.
-
-With a prefix argument, or if SELECT is non-nil, only a single host is
-selected interactively by the function `rsync--select-remote'.
-
-If FILE is nil, use the current buffer file.
-
-If DRY-RUN is non-nil, call rsync with the dry-run flag."
-  (interactive "P")
-  (let ((file-name (file-relative-name (or file buffer-file-name)
-                                       rsync-local-path)))
-    (if select
-        (rsync dry-run file-name)
-      (rsync-all dry-run file-name))))
-
 (provide 'rsync-mode)
 ;;; rsync-mode.el ends here
