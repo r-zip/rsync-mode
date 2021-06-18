@@ -39,7 +39,7 @@ The function `rsync-all` synchronizes the current project to all
 remote hosts found in the directory-local variable
 `rsync-remote-paths`.
 
-## `rsync-mode`
+## Minor mode
 The minor mode `rsync-mode` adds a progress bar indicator to the
 modeline. If `rsync-sync-on-save` is `t`, `rsync-mode` also adds a
 hook that runs `rsync-all` on save, which is especially convenient for
