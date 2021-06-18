@@ -45,15 +45,19 @@
 
 (defvar rsync-local-path nil
   "Local path to the project, as a string.")
+
 (defvar rsync-remote-paths nil
   "Remote paths to the project as a list of strings.
 Each path should have the form 'host:/path/to/project'.")
+
 (defvar rsync-excluded-dirs nil)
+
 ;; to override, delete entry and save in dir-locals
 (defcustom rsync-default-excluded-dirs nil
   "List of directories to exclude from all projects for rsync."
   :group 'rsync
   :type (list 'string))
+
 (defcustom rsync-sync-on-save nil
   "Whether to activate a hook that synchronizes the project after each save."
   :group 'rsync
@@ -61,12 +65,16 @@ Each path should have the form 'host:/path/to/project'.")
 
 (defvar-local rsync-mode nil
   "Whether rsync-mode is enabled.")
+
 (defvar-local rsync--process nil
   "Rsync process object.")
+
 (defvar-local rsync--spinner nil
   "Rsync spinner object.")
+
 (defvar rsync--process-exit-hook nil
   "Closure defining the process cleanup code.")
+
 (defconst rsync--lighter
   '(" rsync" (:eval (spinner-print rsync--spinner)))
   "The mode lighter.")
