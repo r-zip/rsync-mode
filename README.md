@@ -32,9 +32,8 @@ Here is an example that will enable synchronization on save for any file that is
 ## Commands
 Two functions are defined for interactive use: `rsync` and
 `rsync-all`. The former synchronizes files to a single remote, which
-is chosen interactively using `ivy`, with completions read from the
-`rsync-remote-paths` directory-local variable. Integration with
-`helm`, `ido`, and the default `completing-read` is planned.
+is chosen interactively, with completions read from the
+`rsync-remote-paths` directory-local variable.
 
 The function `rsync-all` synchronizes the current project to all
 remote hosts found in the directory-local variable
