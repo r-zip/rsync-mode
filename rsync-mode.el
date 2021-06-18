@@ -5,7 +5,7 @@
 ;; Author: Ryan Pilgrim <ryan.z.pilgrim@gmail.com>
 ;; URL: https://github.com/r-zip/rsync-mode.el
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "26.1") (spinner "1.7.1"))
+;; Package-Requires: ((emacs "26.3") (spinner "1.7.1"))
 ;; Keywords: comm
 
 ;; rsync-mode requires at least GNU Emacs 26.3 and rsync 3.1.3,
