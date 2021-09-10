@@ -26,7 +26,7 @@ Here is an example that will enable synchronization on save for any file that is
                                  "venv"
                                  "*.egg-info"))
          (rsync-sync-on-save . t)
-         (eval . (rsync-mode)))))
+         (eval . (progn (require 'rsync-mode) (rsync-mode))))))
 ```
 
 ## Commands
