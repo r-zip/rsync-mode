@@ -36,6 +36,7 @@
 (require 'spinner)
 (require 'time-stamp)
 (require 'subr-x)
+(require 'seq)
 
 (defgroup rsync nil
   "Convenient remote synchronization."
@@ -117,18 +118,6 @@ These must have the form hostname:path/to/repo (relative or absolute).")
         (cadr (split-string user-and-hostname "@"))
       user-and-hostname)))
 
-(defun rsync--get-excludes (excluded-dirs)
-  "Get rsync exclude flags for EXCLUDED-DIRS.
-EXCLUDED-DIRS should be a list of strings."
-  (if excluded-dirs
-      (string-join
-       (mapcar
-        (lambda (s) (format "--exclude %s" s))
-        (delete-dups `(,@excluded-dirs
-                       ,@rsync-default-excluded-dirs)))
-       " ")
-    ""))
-
 (defun rsync--get-rsync-buffer-name (remote-path)
   "Generate the buffer name for the rsync process.
 REMOTE-PATH is the path to the rsync destination."
@@ -149,10 +138,40 @@ process is complete and forward abnormal event strings."
   (lambda (_ event)
     (with-current-buffer buffer
       (when rsync-mode
-        (spinner-stop rsync--spinner)))
+        (spinner-stop rsync--spinner))
+      (setq rsync--process nil))
     (if (not (string-equal event "finished\n"))
         (message "Rsync process received abnormal event %s" event)
       (message "Rsync complete."))))
+
+(defun rsync--build-args (remote-path excludes local-path &optional dry-run file)
+  "Create an argument list to be passed to the rsync process.
+
+If FILE is non-nil, only that file will be synced.
+If DRY-RUN is t, rsync will be run in dry-run mode.
+If EXCLUDES is non-nil, those directories will be excluded from
+the synchronization.
+LOCAL-PATH specifies the path to the local directory root, or the
+local file, if FILE is non-nil.
+REMOTE-PATH specifies the path to the remote repository."
+  (seq-filter
+   #'identity
+   `(,(if file "-avR" "-av")
+     ,(if dry-run "--dry-run" nil)
+     ,@excludes
+     ,(if file (concat local-path "/./" file) local-path)
+     ,remote-path)))
+
+(defun rsync--get-excludes ()
+  "Get excluded directories for rsync call.
+
+Merges the list of RSYNC-EXCLUDED-DIRS with
+RSYNC-DEFAULT-EXCLUDED-DIRS and deletes duplicates."
+  (flatten-list
+   (mapcar (lambda (x) (format "--exclude=%s" (shell-quote-argument x)))
+           (delete-dups
+            `(,@rsync-excluded-dirs
+              ,@rsync-default-excluded-dirs)))))
 
 (defun rsync--run (remote-path excludes local-path &optional dry-run file)
   "Synchronize the current project from LOCAL-PATH to REMOTE-PATH.
@@ -163,16 +182,15 @@ the dry-run flag.
 If FILE is non-nil, sync only that file. The path specified
 by FILE is assumed to be relative to LOCAL-PATH."
   (rsync--start-spinner)
-  (setq rsync--process
-        (start-process-shell-command
-         "rsync"
-         (rsync--get-rsync-buffer-name remote-path)
-         (format "rsync %s %s%s %s %s"
-                 (if file "-avR" "-av")
-                 (if dry-run "--dry-run " "")
-                 excludes
-                 (if file (concat local-path "/./" file) local-path)
-                 remote-path)))
+  (if rsync--process
+      (message "Cannot start a new rsync process until the existing one finishes.")
+    (setq rsync--process
+          (apply
+           #'start-process
+           `("rsync"
+             ,(rsync--get-rsync-buffer-name remote-path)
+             "rsync"
+             ,@(rsync--build-args remote-path excludes local-path dry-run file)))))
   (with-current-buffer (rsync--get-rsync-buffer-name remote-path)
     (goto-char (point-max))
     (skip-chars-backward "\n[:space:]")
@@ -189,7 +207,12 @@ by FILE is assumed to be relative to RSYNC-LOCAL-PATH."
   (interactive)
   (when rsync-remote-paths
     (dolist (remote-path rsync-remote-paths)
-      (rsync--run remote-path (rsync--get-excludes rsync-excluded-dirs) rsync-local-path dry-run file))))
+      (rsync--run
+       remote-path
+       (rsync--get-excludes)
+       rsync-local-path
+       dry-run
+       file))))
 
 (defun rsync--select-remote ()
   "Interactively select the remote for synchronization.
@@ -207,7 +230,7 @@ If FILE is non-nil, sync only that file. The path specified
 by FILE is assumed to be relative to RSYNC-LOCAL-PATH."
   (interactive)
   (let ((selected-remote (call-interactively #'rsync--select-remote)))
-    (rsync--run selected-remote (rsync--get-excludes rsync-excluded-dirs) rsync-local-path dry-run file)))
+    (rsync--run selected-remote (rsync--get-excludes) rsync-local-path dry-run file)))
 
 (provide 'rsync-mode)
 ;;; rsync-mode.el ends here
