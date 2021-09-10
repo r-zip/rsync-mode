@@ -154,13 +154,18 @@ the synchronization.
 LOCAL-PATH specifies the path to the local directory root, or the
 local file, if FILE is non-nil.
 REMOTE-PATH specifies the path to the remote repository."
-  (seq-filter
-   #'identity
-   `(,(if file "-avR" "-av")
-     ,(if dry-run "--dry-run" nil)
-     ,@excludes
-     ,(if file (concat local-path "/./" file) local-path)
-     ,remote-path)))
+  (let ((remote-path (string-join
+                       (mapcar
+                        (lambda (x) (shell-quote-argument x))
+                        (split-string remote-path ":"))
+                       ":")))
+    (seq-filter
+     #'identity
+     `(,(if file "-avR" "-av")
+       ,(if dry-run "--dry-run" nil)
+       ,@excludes
+       ,(shell-quote-argument (if file (concat local-path "/./" file) local-path))
+       ,remote-path))))
 
 (defun rsync--get-excludes ()
   "Get excluded directories for rsync call.
