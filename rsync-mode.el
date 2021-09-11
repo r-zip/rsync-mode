@@ -8,7 +8,7 @@
 ;; Package-Requires: ((emacs "27.1") (spinner "1.7.1"))
 ;; Keywords: comm
 
-;; rsync-mode requires at least GNU Emacs 26.3 and rsync 3.1.3,
+;; rsync-mode requires at least GNU Emacs 27.1 and rsync 3.1.3,
 ;; protocol version 31.
 
 ;; rsync-mode is free software; you can redistribute it and/or modify it
